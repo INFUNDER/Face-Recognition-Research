@@ -57,13 +57,29 @@ def get_model(name, **kwargs):
         model = get_timmfrv2('edgenext_small', batchnorm=False)
         return replace_linear_with_int4(model)
     elif name.startswith('edgeface_timm_'):
-        parts = name.split('_gamma_')
+        quantize = None
+        clean_name = name
+        if name.endswith('_q'):
+            quantize = 'q'
+            clean_name = name[:-2]
+        elif name.endswith('_q4'):
+            quantize = 'q4'
+            clean_name = name[:-3]
+            
+        parts = clean_name.split('_gamma_')
         if len(parts) == 2:
             model_name = parts[0].replace('edgeface_timm_', '')
             gamma = float(parts[1].replace('_', '.'))
-            return replace_linear_with_lowrank_2(get_timmfrv2(model_name, batchnorm=False), rank_ratio=gamma)
+            model = replace_linear_with_lowrank_2(get_timmfrv2(model_name, batchnorm=False), rank_ratio=gamma)
         else:
-            model_name = name.replace('edgeface_timm_', '')
-            return get_timmfrv2(model_name, batchnorm=False)
+            model_name = clean_name.replace('edgeface_timm_', '')
+            model = get_timmfrv2(model_name, batchnorm=False)
+            
+        if quantize == 'q':
+            model = torch.quantization.quantize_dynamic(model, qconfig_spec={torch.nn.Linear}, dtype=torch.qint8)
+        elif quantize == 'q4':
+            model = replace_linear_with_int4(model)
+            
+        return model
     else:
         raise ValueError(f"Model {name} not found or not supported.")
