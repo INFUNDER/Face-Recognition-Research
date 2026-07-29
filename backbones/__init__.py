@@ -11,7 +11,7 @@ located in the parent directory of this source code repository.
 For inquiries, please contact the author at anjith.george@idiap.ch
 ===============================================================================
 """
-from .timmfr import get_timmfrv2, replace_linear_with_lowrank_2, replace_linear_with_int4
+from .timmfr import get_timmfrv2, replace_linear_with_lowrank_2, replace_linear_with_int4, get_dual_timmfrv2
 
 import torch
 
@@ -77,6 +77,49 @@ def get_model(name, **kwargs):
             
         if quantize == 'q':
             model = torch.quantization.quantize_dynamic(model, qconfig_spec={torch.nn.Linear}, dtype=torch.qint8)
+        elif quantize == 'q4':
+            model = replace_linear_with_int4(model)
+            
+        return model
+    elif name.startswith('edgeface_fusion_'):
+        quantize = None
+        clean_name = name
+        if name.endswith('_q'):
+            quantize = 'q'
+            clean_name = name[:-2]
+        elif name.endswith('_q4'):
+            quantize = 'q4'
+            clean_name = name[:-3]
+            
+        model_name = clean_name.replace('edgeface_fusion_', '')
+        gamma = None
+        if '_gamma_' in model_name:
+            parts = model_name.split('_gamma_')
+            model_name = parts[0]
+            gamma_str = parts[1]
+            if len(gamma_str) == 2 and gamma_str.startswith('0'):
+                gamma = float(gamma_str) / 10.0
+            else:
+                gamma = float(gamma_str.replace('_', '.'))
+            
+        timm_name = 'edgenext_x_small'
+        if model_name == 'xs': timm_name = 'edgenext_x_small'
+        elif model_name == 's': timm_name = 'edgenext_small'
+        elif model_name == 'base': timm_name = 'edgenext_base'
+        
+        quantize_fusion = quantize is not None
+        model = get_dual_timmfrv2(timm_name, batchnorm=False, quantize_fusion=quantize_fusion)
+        if gamma is not None:
+            model = replace_linear_with_lowrank_2(model, rank_ratio=gamma)
+            
+        if quantize == 'q':
+            # Skip QuantizedLowRankTensorFusion so its linear layers are not replaced by DynamicQuantizedLinear
+            from .fusion import QuantizedLowRankTensorFusion
+            q_spec = {
+                torch.nn.Linear: torch.quantization.default_dynamic_qconfig,
+                'fusion': None
+            }
+            model = torch.quantization.quantize_dynamic(model, qconfig_spec=q_spec, dtype=torch.qint8)
         elif quantize == 'q4':
             model = replace_linear_with_int4(model)
             

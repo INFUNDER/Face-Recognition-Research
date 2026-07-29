@@ -18,6 +18,7 @@ import timm
 import torch
 import torch.nn as nn
 import math
+from .fusion import QuantizedLowRankTensorFusion
 
 class LoRaLin(nn.Module):
     def __init__(self, in_features, out_features, rank, bias=True):
@@ -35,6 +36,8 @@ class LoRaLin(nn.Module):
 
 def replace_linear_with_lowrank_recursive_2(model, rank_ratio=0.2, replace_all=True):
     for name, module in model.named_children():
+        if isinstance(module, QuantizedLowRankTensorFusion):
+            continue
         if isinstance(module, nn.Linear) and (replace_all or not any(h in name.lower() for h in ['head', 'fc', 'classifier'])):
             in_features = module.in_features
             out_features = module.out_features
@@ -132,4 +135,42 @@ def get_timmfrv2(model_name, **kwargs):
     Create an instance of TimmFRWrapperV2 with the specified `model_name` and additional arguments passed as `kwargs`.
     """
     return TimmFRWrapperV2(model_name=model_name, **kwargs)
+
+class DualStreamTimmFRWrapper(nn.Module):
+    """
+    Wraps two independent timm models for dual-stream (VIS-NIR) processing and fuses them.
+    """
+    def __init__(self, model_name='edgenext_x_small', featdim=512, batchnorm=False, fusion_rank=64, quantize_fusion=False):
+        super().__init__()
+        self.featdim = featdim
+        self.model_name = model_name
+        
+        # Dual stream backbones
+        self.stream_vis = timm.create_model(self.model_name)
+        self.stream_vis.reset_classifier(self.featdim)
+        
+        self.stream_nir = timm.create_model(self.model_name)
+        self.stream_nir.reset_classifier(self.featdim)
+        
+        self.fusion = QuantizedLowRankTensorFusion(
+            in_features_vis=self.featdim,
+            in_features_nir=self.featdim,
+            out_features=self.featdim,
+            rank=fusion_rank,
+            quantize=quantize_fusion
+        )
+
+    def forward(self, x_vis, x_nir=None):
+        if x_nir is None:
+            # Fallback for single-stream evaluation compatibility
+            x_nir = x_vis
+        
+        feat_vis = self.stream_vis(x_vis)
+        feat_nir = self.stream_nir(x_nir)
+        
+        y = self.fusion(feat_vis, feat_nir)
+        return y
+
+def get_dual_timmfrv2(model_name, **kwargs):
+    return DualStreamTimmFRWrapper(model_name=model_name, **kwargs)
 

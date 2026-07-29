@@ -93,7 +93,8 @@ def main(args):
         cfg.dali,
         cfg.dali_aug,
         cfg.seed,
-        cfg.num_workers
+        cfg.num_workers,
+        multimodal=args.multimodal
     )
 
     backbone = get_model(
@@ -181,10 +182,21 @@ def main(args):
 
         if isinstance(train_loader, DataLoader):
             train_loader.sampler.set_epoch(epoch)
-        for _, (img, local_labels) in enumerate(train_loader):
+            
+        for _, batch in enumerate(train_loader):
             global_step += 1
-            local_embeddings = backbone(img)
+            
+            if args.multimodal:
+                img_vis, img_nir, local_labels = batch
+                local_embeddings = backbone(img_vis, img_nir)
+            else:
+                img, local_labels = batch
+                local_embeddings = backbone(img)
+                
             loss: torch.Tensor = module_partial_fc(local_embeddings, local_labels)
+            
+            if args.multimodal and hasattr(backbone.module, 'fusion'):
+                loss = loss + backbone.module.fusion.cmsb_loss
 
             if cfg.fp16:
                 amp.scale(loss).backward()
@@ -258,4 +270,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Distributed Arcface Training in Pytorch")
     parser.add_argument("config", type=str, help="py config file")
+    parser.add_argument("--multimodal", action="store_true", help="Enable multimodal (dual-stream) training")
     main(parser.parse_args())

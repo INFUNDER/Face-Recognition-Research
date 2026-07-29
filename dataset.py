@@ -24,6 +24,7 @@ def get_dataloader(
     dali_aug = False,
     seed = 2048,
     num_workers = 2,
+    multimodal = False,
     ) -> Iterable:
 
     rec = os.path.join(root_dir, 'train.rec')
@@ -32,7 +33,7 @@ def get_dataloader(
 
     # Synthetic
     if root_dir == "synthetic":
-        train_set = SyntheticDataset()
+        train_set = SyntheticDataset(multimodal=multimodal)
         dali = False
 
     # Mxnet RecordIO
@@ -174,17 +175,29 @@ class MXFaceDataset(Dataset):
 
 
 class SyntheticDataset(Dataset):
-    def __init__(self):
+    def __init__(self, multimodal=False):
         super(SyntheticDataset, self).__init__()
-        img = np.random.randint(0, 255, size=(112, 112, 3), dtype=np.int32)
-        img = np.transpose(img, (2, 0, 1))
-        img = torch.from_numpy(img).squeeze(0).float()
-        img = ((img / 255) - 0.5) / 0.5
-        self.img = img
+        self.multimodal = multimodal
+        
+        # VIS Image
+        img_vis = np.random.randint(0, 255, size=(112, 112, 3), dtype=np.int32)
+        img_vis = np.transpose(img_vis, (2, 0, 1))
+        img_vis = torch.from_numpy(img_vis).squeeze(0).float()
+        self.img_vis = ((img_vis / 255) - 0.5) / 0.5
+        
+        # NIR Image
+        if self.multimodal:
+            img_nir = np.random.randint(0, 255, size=(112, 112, 3), dtype=np.int32)
+            img_nir = np.transpose(img_nir, (2, 0, 1))
+            img_nir = torch.from_numpy(img_nir).squeeze(0).float()
+            self.img_nir = ((img_nir / 255) - 0.5) / 0.5
+            
         self.label = 1
 
     def __getitem__(self, index):
-        return self.img, self.label
+        if self.multimodal:
+            return self.img_vis, self.img_nir, self.label
+        return self.img_vis, self.label
 
     def __len__(self):
         return 1000
