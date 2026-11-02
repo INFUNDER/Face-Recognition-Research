@@ -6,18 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backbones import get_model
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-def get_mflops(model, x_vis, x_nir):
-    with torch.profiler.profile(
-        activities=[torch.profiler.ProfilerActivity.CPU],
-        with_flops=True
-    ) as prof:
-        _ = model(x_vis, x_nir)
-        
-    total_flops = sum(record.flops for record in prof.key_averages() if hasattr(record, 'flops'))
-    return total_flops / 1e6
+from eval_edgeface import count_parameters_in_millions, get_mflops
 import traceback
 
 if __name__ == '__main__':
@@ -48,11 +37,11 @@ if __name__ == '__main__':
             continue
             
         # Get parameter counts
-        params = count_parameters(model) / 1e6
+        params = count_parameters_in_millions(model)
         print(f"Parameters: {params:.3f} M")
         
-        # Get MFLOPs
-        flops = get_mflops(model, x_vis, x_nir)
+        # Get MFLOPs (single 1x3x112x112 input; dual-stream falls back to x_nir = x_vis)
+        flops = get_mflops(model)
         print(f"MFLOPs: {flops:.3f}")
         
         print(f"CMSB Loss: {model.fusion.cmsb_loss}\n")

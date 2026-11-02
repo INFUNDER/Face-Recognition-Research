@@ -98,6 +98,8 @@ class FakeINT4Linear(nn.Module):
         # Quantize and dequantize
         quantized_weight = torch.round(self.weight / scale).clamp(-8, 7)
         dequantized_weight = quantized_weight * scale
+        # STE: forward uses quantized weights, backward passes gradients through unchanged
+        dequantized_weight = self.weight + (dequantized_weight - self.weight).detach()
         return torch.nn.functional.linear(x, dequantized_weight, self.bias)
 
 def replace_linear_with_int4_recursive(model):

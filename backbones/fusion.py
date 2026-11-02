@@ -34,13 +34,14 @@ class QuantizedLowRankTensorFusion(nn.Module):
         nn.init.zeros_(self.U3_bias)
 
     def _fake_quantize(self, weight):
-        """Simulates symmetric 8-bit quantization"""
+        """Simulates symmetric 8-bit quantization with a straight-through estimator"""
         w_max = weight.abs().max()
         scale = w_max / 127.0
         if scale == 0:
             return weight
         quantized = torch.round(weight / scale).clamp(-128, 127)
-        return quantized * scale
+        # STE: forward uses quantized weights, backward passes gradients through unchanged
+        return weight + (quantized * scale - weight).detach()
 
     def forward(self, x_vis, x_nir):
         """
