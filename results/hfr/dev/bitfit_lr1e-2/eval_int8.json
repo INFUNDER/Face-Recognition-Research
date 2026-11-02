@@ -1,0 +1,43 @@
+{
+  "network": "edgeface_xs_gamma_06",
+  "weight": "/home/ronit.28010/EdgeFace/bob.paper.tbiom2023_edgeface-master/results/hfr/dev/bitfit_lr1e-2/model.pt",
+  "int8": true,
+  "split": "devval",
+  "fold": null,
+  "gray_thr": true,
+  "gray_vis": false,
+  "flip": false,
+  "modulation": false,
+  "thr2vis": {
+    "rank1": 0.13351877607788595,
+    "tar@far=1e-2": 0.055632823365785816,
+    "tar@far=1e-3": 0.01808066759388039,
+    "eer": 0.40308176561013104,
+    "n_probes": 719,
+    "n_gallery": 20
+  },
+  "thr2vis_frontal": {
+    "rank1": 0.15,
+    "tar@far=1e-2": 0.1,
+    "tar@far=1e-3": 0.075,
+    "eer": 0.42269736842105265,
+    "n_probes": 80,
+    "n_gallery": 20
+  },
+  "vis2vis": {
+    "rank1": 0.7246175243393602,
+    "tar@far=1e-2": 0.5048678720445062,
+    "tar@far=1e-3": 0.32684283727399166,
+    "eer": 0.15141644096332624,
+    "n_probes": 719,
+    "n_gallery": 20
+  },
+  "vis2vis_frontal": {
+    "rank1": 0.85,
+    "tar@far=1e-2": 0.85,
+    "tar@far=1e-3": 0.7,
+    "eer": 0.087828947368421,
+    "n_probes": 80,
+    "n_gallery": 20
+  }
+}

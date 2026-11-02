@@ -19,16 +19,37 @@ This work targets the rigorous standards of the *Information Fusion* journal, of
 
 The following table summarizes the trade-offs between computational complexity (MFLOPs), model parameters, disk footprint, and verification accuracy on the Labeled Faces in the Wild (LFW) dataset:
 
-| Model Configuration | Description | Complexity (MFLOPs) | Parameter Count (M) | Disk Footprint (MB) | FLOPs Reduction | LFW Verification Accuracy | Accuracy Loss vs. Baseline |
+| Model Configuration | Description | Complexity (MFLOPs) | Parameter Count (M) | Disk Footprint (MB) | Disk Reduction | LFW Verification Accuracy | Accuracy Loss vs. Baseline |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`edgeface_xs_gamma_06`** | XS Baseline | 153.998 | 1.770 | 7.18 | Baseline | 99.733% +- 0.35% | - |
-| **`edgeface_xs_gamma_06_q`** | **XS Low-Rank + Dynamic INT8** | **20.160** | **0.202** | **2.58** | **7.6x Lower** | **99.617% +- 0.34%** | **0.116%** |
-| **`edgeface_fusion_xs_gamma_06`** | Dual-Stream Q-LRTF (Float) | 616.38 | 3.640 | 14.60 | Baseline | - | - |
-| **`edgeface_fusion_xs_gamma_06_q`** | **Dual-Stream Q-LRTF (INT8)** | **81.12** | **0.503** | **2.21** | **7.6x Lower** | - | - |
-| **`edgeface_s_gamma_05`** | S Baseline | 306.116 | 3.653 | 14.71 | Baseline | 99.783% +- 0.27% | - |
-| **`edgeface_s_gamma_05_q`** | **S Low-Rank + Dynamic INT8** | **36.284** | **0.419** | **5.13** | **8.4x Lower** | **99.500% +- 0.39%** | **0.283%** |
+| **`edgeface_xs_gamma_06`** | XS Baseline | 154.00 | 1.770 | 7.18 | Baseline | 99.733% +- 0.35% | - |
+| **`edgeface_xs_gamma_06_q`** | **XS Low-Rank + Dynamic INT8** | **154.00** | **1.770** | **2.57** | **2.8x Lower** | **99.617% +- 0.34%** | **0.116%** |
+| **`edgeface_fusion_xs_gamma_06`** | Dual-Stream Q-LRTF (Float) | 308.19 | 3.640 | 14.76 | Baseline | - | - |
+| **`edgeface_fusion_xs_gamma_06_q`** | **Dual-Stream Q-LRTF (INT8)** | **308.39** | **3.640** | **5.55** | **2.7x Lower** | - | - |
+| **`edgeface_s_gamma_05`** | S Baseline | 306.12 | 3.653 | 14.71 | Baseline | 99.783% +- 0.27% | - |
+| **`edgeface_s_gamma_05_q`** | **S Low-Rank + Dynamic INT8** | **306.12** | **3.653** | **5.13** | **2.9x Lower** | **99.500% +- 0.39%** | **0.283%** |
 
-*Note: Quantized parameter counts reflect only unquantized parameters (like batch-normalization variables and convolution filters), as dynamic INT8 weights are packed into scale/offset integer buffers.*
+*Note: FLOPs are measured for a single 1x3x112x112 input (dual-stream models run both streams on it). Dynamic INT8 keeps the operation count unchanged; it only stores `nn.Linear` weights in 8 bits, so the gain is in disk/memory footprint, not FLOPs or parameter count. Packed INT8 linear weights are included in the parameter count, and their FLOPs are counted with forward hooks because the PyTorch profiler does not report FLOPs for `quantized::linear_dynamic`.*
+
+---
+
+## 🌡️ Thermal-to-Visible HFR Study (paper draft in `paper/`)
+
+A reproducible study of lightweight thermal-to-visible heterogeneous face recognition with EdgeFace-XS, built only on the openly licensed (CC BY 4.0) [SpeakingFaces](https://huggingface.co/datasets/issai/Speaking_Faces) corpus: subject-disjoint 5-fold cross-validation, 3 seeds, 8 adaptation strategies, visible-light forgetting on LFW, and full / stage-selective dynamic INT8.
+
+| Method | Trainable params | Rank-1 FP32 | TAR@FAR=0.1% FP32 | Rank-1 INT8 | Rank-1 INT8 (last stage only) | LFW |
+| :--- | ---: | :---: | :---: | :---: | :---: | :---: |
+| Zero-shot | 0 | 34.0 | 6.3 | 28.8 | 33.1 | 99.73 |
+| Full fine-tuning | 1.77M | 95.6 | 83.8 | 93.4 | 95.6 | 98.52 |
+| LoRA (rank +1) | 20.5k | 93.6 | 77.8 | 89.1 | 93.1 | 98.96 |
+| Modality-specific LayerNorm | 5.1k | 92.1 | 66.1 | 84.7 | 90.9 | 99.73 |
+| Rank-space modulation + msLN | 10.4k | 91.3 | 65.4 | 86.2 | 90.3 | 99.73 |
+
+Full table: `results/hfr/cv_summary.md`. Reproduction steps and the source of every number in the paper: `paper/README.md`.
+
+* `scripts/hfr/download_speakingfaces.py`, `align_speakingfaces.py`: fetch only the needed frames (~3 GB) and align thermal/visible pairs with one MTCNN warp.
+* `scripts/hfr/train_hfr.py`, `eval_hfr.py`, `eval_vis_bench.py`: adaptation, HFR protocol, LFW forgetting.
+* `scripts/hfr/run_experiments.py` + `configs/*.txt`: resumable experiment runner; `aggregate.py`: mean ± std tables; `benchmark_latency.py`: CPU latency and model size.
+* `backbones/modality.py` (rank-space modulation, modality-specific LayerNorm), `backbones/peft.py` (LoRA for factorized layers), `backbones/qat.py` (exact simulation of PyTorch dynamic INT8).
 
 ---
 

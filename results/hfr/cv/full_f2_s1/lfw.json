@@ -1,0 +1,9 @@
+{
+  "weight": "/home/ronit.28010/EdgeFace/bob.paper.tbiom2023_edgeface-master/results/hfr/cv/full_f2_s1/model.pt",
+  "int8": false,
+  "modulation": false,
+  "lfw": {
+    "acc": 0.9796666666666667,
+    "std": 0.0039299420408505275
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "weight": "checkpoints/edgeface_xs_gamma_06.pt",
+  "int8": false,
+  "modulation": false,
+  "lfw": {
+    "acc": 0.9973333333333333,
+    "std": 0.003511884584284256
+  }
+}

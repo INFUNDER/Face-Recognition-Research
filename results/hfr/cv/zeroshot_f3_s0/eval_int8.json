@@ -1,0 +1,44 @@
+{
+  "network": "edgeface_xs_gamma_06",
+  "weight": "checkpoints/edgeface_xs_gamma_06.pt",
+  "int8": true,
+  "int8_stages": "",
+  "split": "test",
+  "fold": 3,
+  "gray_thr": true,
+  "gray_vis": false,
+  "flip": false,
+  "modulation": false,
+  "thr2vis": {
+    "rank1": 0.2840119165839126,
+    "tar@far=1e-2": 0.1529294935451837,
+    "tar@far=1e-3": 0.018867924528301886,
+    "eer": 0.2656589061752914,
+    "n_probes": 1007,
+    "n_gallery": 28
+  },
+  "thr2vis_frontal": {
+    "rank1": 0.375,
+    "tar@far=1e-2": 0.13392857142857142,
+    "tar@far=1e-3": 0.03571428571428571,
+    "eer": 0.25,
+    "n_probes": 112,
+    "n_gallery": 28
+  },
+  "vis2vis": {
+    "rank1": 0.9990069513406157,
+    "tar@far=1e-2": 0.9980139026812314,
+    "tar@far=1e-3": 0.9940417080436942,
+    "eer": 0.0038250763176285174,
+    "n_probes": 1007,
+    "n_gallery": 28
+  },
+  "vis2vis_frontal": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 1.0,
+    "eer": 0.0,
+    "n_probes": 112,
+    "n_gallery": 28
+  }
+}

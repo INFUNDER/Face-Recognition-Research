@@ -1,0 +1,44 @@
+{
+  "network": "edgeface_xs_gamma_06",
+  "weight": "/home/ronit.28010/EdgeFace/bob.paper.tbiom2023_edgeface-master/results/hfr/cv/lora_f4_s2/model.pt",
+  "int8": false,
+  "int8_stages": "",
+  "split": "test",
+  "fold": 4,
+  "gray_thr": true,
+  "gray_vis": false,
+  "flip": false,
+  "modulation": false,
+  "thr2vis": {
+    "rank1": 0.945,
+    "tar@far=1e-2": 0.928,
+    "tar@far=1e-3": 0.778,
+    "eer": 0.033907407407407386,
+    "n_probes": 1000,
+    "n_gallery": 28
+  },
+  "thr2vis_frontal": {
+    "rank1": 0.9910714285714286,
+    "tar@far=1e-2": 0.9642857142857143,
+    "tar@far=1e-3": 0.7589285714285714,
+    "eer": 0.010085978835978837,
+    "n_probes": 112,
+    "n_gallery": 28
+  },
+  "vis2vis": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 0.999,
+    "eer": 0.0015000000000000013,
+    "n_probes": 1000,
+    "n_gallery": 28
+  },
+  "vis2vis_frontal": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 1.0,
+    "eer": 0.0,
+    "n_probes": 112,
+    "n_gallery": 28
+  }
+}

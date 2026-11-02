@@ -1,0 +1,5 @@
+{
+  "mode": "none",
+  "weight": "checkpoints/edgeface_xs_gamma_06.pt",
+  "trainable_params": 0
+}

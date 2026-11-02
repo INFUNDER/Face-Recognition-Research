@@ -1,0 +1,126 @@
+# 5-fold subject CV x 3 seeds; hyper-parameters picked on the dev split (configs/dev_sweep.txt)
+full_f0_s0  --mode full --fold 0 --seed 0
+bitfit_f0_s0  --mode bitfit --lr_peft 1e-3 --fold 0 --seed 0
+ln_f0_s0  --mode ln --lr_peft 1e-3 --fold 0 --seed 0
+lora_f0_s0  --mode lora --lr_peft 1e-3 --fold 0 --seed 0
+n1_f0_s0  --mode mod --anchor_vis --fold 0 --seed 0
+n1both_f0_s0  --mode mod --anchor_vis --mod_params both --fold 0 --seed 0
+msln_f0_s0  --mode mod --anchor_vis --mod_targets norm --fold 0 --seed 0
+n1both_msln_f0_s0  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 0 --seed 0
+full_f1_s0  --mode full --fold 1 --seed 0
+bitfit_f1_s0  --mode bitfit --lr_peft 1e-3 --fold 1 --seed 0
+ln_f1_s0  --mode ln --lr_peft 1e-3 --fold 1 --seed 0
+lora_f1_s0  --mode lora --lr_peft 1e-3 --fold 1 --seed 0
+n1_f1_s0  --mode mod --anchor_vis --fold 1 --seed 0
+n1both_f1_s0  --mode mod --anchor_vis --mod_params both --fold 1 --seed 0
+msln_f1_s0  --mode mod --anchor_vis --mod_targets norm --fold 1 --seed 0
+n1both_msln_f1_s0  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 1 --seed 0
+full_f2_s0  --mode full --fold 2 --seed 0
+bitfit_f2_s0  --mode bitfit --lr_peft 1e-3 --fold 2 --seed 0
+ln_f2_s0  --mode ln --lr_peft 1e-3 --fold 2 --seed 0
+lora_f2_s0  --mode lora --lr_peft 1e-3 --fold 2 --seed 0
+n1_f2_s0  --mode mod --anchor_vis --fold 2 --seed 0
+n1both_f2_s0  --mode mod --anchor_vis --mod_params both --fold 2 --seed 0
+msln_f2_s0  --mode mod --anchor_vis --mod_targets norm --fold 2 --seed 0
+n1both_msln_f2_s0  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 2 --seed 0
+full_f3_s0  --mode full --fold 3 --seed 0
+bitfit_f3_s0  --mode bitfit --lr_peft 1e-3 --fold 3 --seed 0
+ln_f3_s0  --mode ln --lr_peft 1e-3 --fold 3 --seed 0
+lora_f3_s0  --mode lora --lr_peft 1e-3 --fold 3 --seed 0
+n1_f3_s0  --mode mod --anchor_vis --fold 3 --seed 0
+n1both_f3_s0  --mode mod --anchor_vis --mod_params both --fold 3 --seed 0
+msln_f3_s0  --mode mod --anchor_vis --mod_targets norm --fold 3 --seed 0
+n1both_msln_f3_s0  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 3 --seed 0
+full_f4_s0  --mode full --fold 4 --seed 0
+bitfit_f4_s0  --mode bitfit --lr_peft 1e-3 --fold 4 --seed 0
+ln_f4_s0  --mode ln --lr_peft 1e-3 --fold 4 --seed 0
+lora_f4_s0  --mode lora --lr_peft 1e-3 --fold 4 --seed 0
+n1_f4_s0  --mode mod --anchor_vis --fold 4 --seed 0
+n1both_f4_s0  --mode mod --anchor_vis --mod_params both --fold 4 --seed 0
+msln_f4_s0  --mode mod --anchor_vis --mod_targets norm --fold 4 --seed 0
+n1both_msln_f4_s0  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 4 --seed 0
+full_f0_s1  --mode full --fold 0 --seed 1
+bitfit_f0_s1  --mode bitfit --lr_peft 1e-3 --fold 0 --seed 1
+ln_f0_s1  --mode ln --lr_peft 1e-3 --fold 0 --seed 1
+lora_f0_s1  --mode lora --lr_peft 1e-3 --fold 0 --seed 1
+n1_f0_s1  --mode mod --anchor_vis --fold 0 --seed 1
+n1both_f0_s1  --mode mod --anchor_vis --mod_params both --fold 0 --seed 1
+msln_f0_s1  --mode mod --anchor_vis --mod_targets norm --fold 0 --seed 1
+n1both_msln_f0_s1  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 0 --seed 1
+full_f1_s1  --mode full --fold 1 --seed 1
+bitfit_f1_s1  --mode bitfit --lr_peft 1e-3 --fold 1 --seed 1
+ln_f1_s1  --mode ln --lr_peft 1e-3 --fold 1 --seed 1
+lora_f1_s1  --mode lora --lr_peft 1e-3 --fold 1 --seed 1
+n1_f1_s1  --mode mod --anchor_vis --fold 1 --seed 1
+n1both_f1_s1  --mode mod --anchor_vis --mod_params both --fold 1 --seed 1
+msln_f1_s1  --mode mod --anchor_vis --mod_targets norm --fold 1 --seed 1
+n1both_msln_f1_s1  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 1 --seed 1
+full_f2_s1  --mode full --fold 2 --seed 1
+bitfit_f2_s1  --mode bitfit --lr_peft 1e-3 --fold 2 --seed 1
+ln_f2_s1  --mode ln --lr_peft 1e-3 --fold 2 --seed 1
+lora_f2_s1  --mode lora --lr_peft 1e-3 --fold 2 --seed 1
+n1_f2_s1  --mode mod --anchor_vis --fold 2 --seed 1
+n1both_f2_s1  --mode mod --anchor_vis --mod_params both --fold 2 --seed 1
+msln_f2_s1  --mode mod --anchor_vis --mod_targets norm --fold 2 --seed 1
+n1both_msln_f2_s1  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 2 --seed 1
+full_f3_s1  --mode full --fold 3 --seed 1
+bitfit_f3_s1  --mode bitfit --lr_peft 1e-3 --fold 3 --seed 1
+ln_f3_s1  --mode ln --lr_peft 1e-3 --fold 3 --seed 1
+lora_f3_s1  --mode lora --lr_peft 1e-3 --fold 3 --seed 1
+n1_f3_s1  --mode mod --anchor_vis --fold 3 --seed 1
+n1both_f3_s1  --mode mod --anchor_vis --mod_params both --fold 3 --seed 1
+msln_f3_s1  --mode mod --anchor_vis --mod_targets norm --fold 3 --seed 1
+n1both_msln_f3_s1  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 3 --seed 1
+full_f4_s1  --mode full --fold 4 --seed 1
+bitfit_f4_s1  --mode bitfit --lr_peft 1e-3 --fold 4 --seed 1
+ln_f4_s1  --mode ln --lr_peft 1e-3 --fold 4 --seed 1
+lora_f4_s1  --mode lora --lr_peft 1e-3 --fold 4 --seed 1
+n1_f4_s1  --mode mod --anchor_vis --fold 4 --seed 1
+n1both_f4_s1  --mode mod --anchor_vis --mod_params both --fold 4 --seed 1
+msln_f4_s1  --mode mod --anchor_vis --mod_targets norm --fold 4 --seed 1
+n1both_msln_f4_s1  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 4 --seed 1
+full_f0_s2  --mode full --fold 0 --seed 2
+bitfit_f0_s2  --mode bitfit --lr_peft 1e-3 --fold 0 --seed 2
+ln_f0_s2  --mode ln --lr_peft 1e-3 --fold 0 --seed 2
+lora_f0_s2  --mode lora --lr_peft 1e-3 --fold 0 --seed 2
+n1_f0_s2  --mode mod --anchor_vis --fold 0 --seed 2
+n1both_f0_s2  --mode mod --anchor_vis --mod_params both --fold 0 --seed 2
+msln_f0_s2  --mode mod --anchor_vis --mod_targets norm --fold 0 --seed 2
+n1both_msln_f0_s2  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 0 --seed 2
+full_f1_s2  --mode full --fold 1 --seed 2
+bitfit_f1_s2  --mode bitfit --lr_peft 1e-3 --fold 1 --seed 2
+ln_f1_s2  --mode ln --lr_peft 1e-3 --fold 1 --seed 2
+lora_f1_s2  --mode lora --lr_peft 1e-3 --fold 1 --seed 2
+n1_f1_s2  --mode mod --anchor_vis --fold 1 --seed 2
+n1both_f1_s2  --mode mod --anchor_vis --mod_params both --fold 1 --seed 2
+msln_f1_s2  --mode mod --anchor_vis --mod_targets norm --fold 1 --seed 2
+n1both_msln_f1_s2  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 1 --seed 2
+full_f2_s2  --mode full --fold 2 --seed 2
+bitfit_f2_s2  --mode bitfit --lr_peft 1e-3 --fold 2 --seed 2
+ln_f2_s2  --mode ln --lr_peft 1e-3 --fold 2 --seed 2
+lora_f2_s2  --mode lora --lr_peft 1e-3 --fold 2 --seed 2
+n1_f2_s2  --mode mod --anchor_vis --fold 2 --seed 2
+n1both_f2_s2  --mode mod --anchor_vis --mod_params both --fold 2 --seed 2
+msln_f2_s2  --mode mod --anchor_vis --mod_targets norm --fold 2 --seed 2
+n1both_msln_f2_s2  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 2 --seed 2
+full_f3_s2  --mode full --fold 3 --seed 2
+bitfit_f3_s2  --mode bitfit --lr_peft 1e-3 --fold 3 --seed 2
+ln_f3_s2  --mode ln --lr_peft 1e-3 --fold 3 --seed 2
+lora_f3_s2  --mode lora --lr_peft 1e-3 --fold 3 --seed 2
+n1_f3_s2  --mode mod --anchor_vis --fold 3 --seed 2
+n1both_f3_s2  --mode mod --anchor_vis --mod_params both --fold 3 --seed 2
+msln_f3_s2  --mode mod --anchor_vis --mod_targets norm --fold 3 --seed 2
+n1both_msln_f3_s2  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 3 --seed 2
+full_f4_s2  --mode full --fold 4 --seed 2
+bitfit_f4_s2  --mode bitfit --lr_peft 1e-3 --fold 4 --seed 2
+ln_f4_s2  --mode ln --lr_peft 1e-3 --fold 4 --seed 2
+lora_f4_s2  --mode lora --lr_peft 1e-3 --fold 4 --seed 2
+n1_f4_s2  --mode mod --anchor_vis --fold 4 --seed 2
+n1both_f4_s2  --mode mod --anchor_vis --mod_params both --fold 4 --seed 2
+msln_f4_s2  --mode mod --anchor_vis --mod_targets norm --fold 4 --seed 2
+n1both_msln_f4_s2  --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --fold 4 --seed 2
+zeroshot_f0_s0  --mode none --fold 0
+zeroshot_f1_s0  --mode none --fold 1
+zeroshot_f2_s0  --mode none --fold 2
+zeroshot_f3_s0  --mode none --fold 3
+zeroshot_f4_s0  --mode none --fold 4

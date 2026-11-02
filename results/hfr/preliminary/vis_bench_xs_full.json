@@ -1,0 +1,9 @@
+{
+  "weight": "results/hfr/xs_full_seed0/model.pt",
+  "int8": false,
+  "modulation": false,
+  "lfw": {
+    "acc": 0.9871666666666666,
+    "std": 0.004775516260631467
+  }
+}

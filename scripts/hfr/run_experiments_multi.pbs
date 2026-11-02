@@ -1,0 +1,26 @@
+#!/bin/bash
+#PBS -N hfr_multi
+#PBS -q gpu
+#PBS -l select=1:ncpus=32:ngpus=1:mem=128g
+#PBS -l walltime=12:00:00
+#PBS -j oe
+# The gpu queue allows only 2 running jobs per user, so one job runs several shards side by side
+# on its GPU (the models are small; training is data-loading bound).
+# qsub -v CONFIG=...,OUT_ROOT=...,SHARDS="0/8 2/8 4/8 6/8" scripts/hfr/run_experiments_multi.pbs
+cd $PBS_O_WORKDIR
+source /home/soft/anaconda3/etc/profile.d/conda.sh
+conda activate GPU-env
+mkdir -p logs/hfr
+export OMP_NUM_THREADS=4
+# GPUs on these nodes are not isolated per job: if PBS did not pin one, take the emptiest
+echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+nvidia-smi --query-gpu=index,memory.used,memory.total --format=csv
+if [ -z "$CUDA_VISIBLE_DEVICES" ]; then
+    export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits | sort -t, -k2 -n | head -1 | cut -d, -f1)
+    echo "picked GPU $CUDA_VISIBLE_DEVICES"
+fi
+for SHARD in $SHARDS; do
+    python scripts/hfr/run_experiments.py $CONFIG --out_root $OUT_ROOT --shard $SHARD --lfw \
+        > logs/hfr/$(basename $OUT_ROOT).shard${SHARD/\//of}.log 2>&1 &
+done
+wait

@@ -1,0 +1,44 @@
+{
+  "network": "edgeface_xs_gamma_06",
+  "weight": "results/hfr/cv/msln_f4_s0/model.pt",
+  "int8": true,
+  "int8_stages": "0,1,2",
+  "split": "test",
+  "fold": 4,
+  "gray_thr": true,
+  "gray_vis": false,
+  "flip": false,
+  "modulation": true,
+  "thr2vis": {
+    "rank1": 0.847,
+    "tar@far=1e-2": 0.78,
+    "tar@far=1e-3": 0.475,
+    "eer": 0.06485185185185183,
+    "n_probes": 1000,
+    "n_gallery": 28
+  },
+  "thr2vis_frontal": {
+    "rank1": 0.8482142857142857,
+    "tar@far=1e-2": 0.8660714285714286,
+    "tar@far=1e-3": 0.4017857142857143,
+    "eer": 0.047949735449735464,
+    "n_probes": 112,
+    "n_gallery": 28
+  },
+  "vis2vis": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 0.999,
+    "eer": 0.0005000000000000004,
+    "n_probes": 1000,
+    "n_gallery": 28
+  },
+  "vis2vis_frontal": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 1.0,
+    "eer": 0.0,
+    "n_probes": 112,
+    "n_gallery": 28
+  }
+}

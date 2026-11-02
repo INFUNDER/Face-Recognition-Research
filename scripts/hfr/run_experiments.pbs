@@ -1,0 +1,11 @@
+#!/bin/bash
+#PBS -N hfr_exp
+#PBS -q gpu
+#PBS -l select=1:ncpus=8:ngpus=1:mem=64g
+#PBS -l walltime=12:00:00
+#PBS -j oe
+# qsub -v CONFIG=scripts/hfr/configs/<file>.txt,OUT_ROOT=results/hfr/<dir>,SHARD=0/4 scripts/hfr/run_experiments.pbs
+cd $PBS_O_WORKDIR
+source /home/soft/anaconda3/etc/profile.d/conda.sh
+conda activate GPU-env
+python scripts/hfr/run_experiments.py $CONFIG --out_root $OUT_ROOT --shard ${SHARD:-0/1} --lfw

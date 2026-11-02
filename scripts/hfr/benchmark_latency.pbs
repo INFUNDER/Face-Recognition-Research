@@ -1,0 +1,11 @@
+#!/bin/bash
+#PBS -N hfr_latency
+#PBS -q workq
+#PBS -l select=1:ncpus=8:mem=16g
+#PBS -l walltime=01:00:00
+#PBS -j oe
+cd $PBS_O_WORKDIR
+source /home/soft/anaconda3/etc/profile.d/conda.sh
+conda activate GPU-env
+lscpu | grep -E "Model name|^CPU\(s\)"
+python scripts/hfr/benchmark_latency.py --out results/hfr/latency_x86.json

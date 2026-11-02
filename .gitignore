@@ -17,3 +17,12 @@ synthetic_baseline_run/
 *.o[0-9]*
 *.pth
 *.pt
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+logs/
+results/**/*.log

@@ -1,0 +1,9 @@
+{
+  "weight": "/home/ronit.28010/EdgeFace/bob.paper.tbiom2023_edgeface-master/results/hfr/cv/bitfit_f4_s1/model.pt",
+  "int8": false,
+  "modulation": false,
+  "lfw": {
+    "acc": 0.9746666666666668,
+    "std": 0.008938058451861285
+  }
+}

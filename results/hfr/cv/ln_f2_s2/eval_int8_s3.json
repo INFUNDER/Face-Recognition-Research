@@ -1,0 +1,44 @@
+{
+  "network": "edgeface_xs_gamma_06",
+  "weight": "results/hfr/cv/ln_f2_s2/model.pt",
+  "int8": true,
+  "int8_stages": "3",
+  "split": "test",
+  "fold": 2,
+  "gray_thr": true,
+  "gray_vis": false,
+  "flip": false,
+  "modulation": false,
+  "thr2vis": {
+    "rank1": 0.9563492063492064,
+    "tar@far=1e-2": 0.9553571428571429,
+    "tar@far=1e-3": 0.7162698412698413,
+    "eer": 0.021402851263962408,
+    "n_probes": 1008,
+    "n_gallery": 28
+  },
+  "thr2vis_frontal": {
+    "rank1": 0.9553571428571429,
+    "tar@far=1e-2": 0.9553571428571429,
+    "tar@far=1e-3": 0.7767857142857143,
+    "eer": 0.01570767195767203,
+    "n_probes": 112,
+    "n_gallery": 28
+  },
+  "vis2vis": {
+    "rank1": 0.996031746031746,
+    "tar@far=1e-2": 0.9871031746031746,
+    "tar@far=1e-3": 0.9841269841269841,
+    "eer": 0.012235449735449766,
+    "n_probes": 1008,
+    "n_gallery": 28
+  },
+  "vis2vis_frontal": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 1.0,
+    "eer": 0.0,
+    "n_probes": 112,
+    "n_gallery": 28
+  }
+}

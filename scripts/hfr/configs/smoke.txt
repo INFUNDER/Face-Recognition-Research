@@ -1,0 +1,8 @@
+# one epoch of every mode on the dev split, to catch crashes before the real runs
+full        --mode full --split devtrain --epochs 1
+mod_anchor  --mode mod --anchor_vis --mod_params both --split devtrain --epochs 1
+bitfit      --mode bitfit --split devtrain --epochs 1
+ln          --mode ln --split devtrain --epochs 1
+lora        --mode lora --split devtrain --epochs 1
+n2          --mode mod --anchor_vis --qat --distill_pair 1 --split devtrain --epochs 1
+fold        --mode mod --anchor_vis --fold 3 --epochs 1

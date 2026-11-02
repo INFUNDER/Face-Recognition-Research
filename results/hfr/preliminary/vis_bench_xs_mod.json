@@ -1,0 +1,9 @@
+{
+  "weight": "results/hfr/xs_mod_seed0/model.pt",
+  "int8": false,
+  "modulation": true,
+  "lfw": {
+    "acc": 0.9869999999999999,
+    "std": 0.00585946527708232
+  }
+}

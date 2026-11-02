@@ -1,0 +1,44 @@
+{
+  "network": "edgeface_xs_gamma_06",
+  "weight": "/home/ronit.28010/EdgeFace/bob.paper.tbiom2023_edgeface-master/results/hfr/cv/n1both_f3_s1/model.pt",
+  "int8": true,
+  "int8_stages": "",
+  "split": "test",
+  "fold": 3,
+  "gray_thr": true,
+  "gray_vis": false,
+  "flip": false,
+  "modulation": true,
+  "thr2vis": {
+    "rank1": 0.7805362462760675,
+    "tar@far=1e-2": 0.6951340615690169,
+    "tar@far=1e-3": 0.4667328699106256,
+    "eer": 0.09654639744014126,
+    "n_probes": 1007,
+    "n_gallery": 28
+  },
+  "thr2vis_frontal": {
+    "rank1": 0.8660714285714286,
+    "tar@far=1e-2": 0.75,
+    "tar@far=1e-3": 0.5714285714285714,
+    "eer": 0.08531746031746029,
+    "n_probes": 112,
+    "n_gallery": 28
+  },
+  "vis2vis": {
+    "rank1": 0.9990069513406157,
+    "tar@far=1e-2": 0.9980139026812314,
+    "tar@far=1e-3": 0.9940417080436942,
+    "eer": 0.0038250763176285174,
+    "n_probes": 1007,
+    "n_gallery": 28
+  },
+  "vis2vis_frontal": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 1.0,
+    "eer": 0.0,
+    "n_probes": 112,
+    "n_gallery": 28
+  }
+}

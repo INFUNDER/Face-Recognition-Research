@@ -1,0 +1,44 @@
+{
+  "network": "edgeface_xs_gamma_06",
+  "weight": "results/hfr/cv/lora_f1_s0/model.pt",
+  "int8": true,
+  "int8_stages": "0,1,2",
+  "split": "test",
+  "fold": 1,
+  "gray_thr": true,
+  "gray_vis": false,
+  "flip": false,
+  "modulation": false,
+  "thr2vis": {
+    "rank1": 0.8623676612127045,
+    "tar@far=1e-2": 0.8142444658325313,
+    "tar@far=1e-3": 0.5726660250240616,
+    "eer": 0.060807094733947464,
+    "n_probes": 1039,
+    "n_gallery": 29
+  },
+  "thr2vis_frontal": {
+    "rank1": 0.896551724137931,
+    "tar@far=1e-2": 0.8275862068965517,
+    "tar@far=1e-3": 0.6810344827586207,
+    "eer": 0.0669642857142857,
+    "n_probes": 116,
+    "n_gallery": 29
+  },
+  "vis2vis": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 0.9971126082771896,
+    "tar@far=1e-3": 0.9961501443695862,
+    "eer": 0.0019936752371785826,
+    "n_probes": 1039,
+    "n_gallery": 29
+  },
+  "vis2vis_frontal": {
+    "rank1": 1.0,
+    "tar@far=1e-2": 1.0,
+    "tar@far=1e-3": 1.0,
+    "eer": 0.0,
+    "n_probes": 116,
+    "n_gallery": 29
+  }
+}

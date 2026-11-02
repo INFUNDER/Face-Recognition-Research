@@ -1,0 +1,27 @@
+# Learning-rate / loss-weight selection on the dev split (train 1-80, val 81-100); the
+# 5-fold CV runs use the settings picked here. Test subjects of the default split are untouched.
+full              --mode full --split devtrain
+full_lr3e-4       --mode full --split devtrain --lr 3e-4
+n1_lr1e-2         --mode mod --anchor_vis --split devtrain --lr_mod 1e-2
+n1_lr1e-1         --mode mod --anchor_vis --split devtrain --lr_mod 1e-1
+n1both_lr1e-2     --mode mod --anchor_vis --mod_params both --split devtrain --lr_mod 1e-2
+n1both_lr1e-1     --mode mod --anchor_vis --mod_params both --split devtrain --lr_mod 1e-1
+bitfit_lr1e-3     --mode bitfit --split devtrain --lr_peft 1e-3
+bitfit_lr1e-2     --mode bitfit --split devtrain --lr_peft 1e-2
+ln_lr1e-3         --mode ln --split devtrain --lr_peft 1e-3
+ln_lr1e-2         --mode ln --split devtrain --lr_peft 1e-2
+lora_lr1e-3       --mode lora --split devtrain --lr_peft 1e-3
+lora_lr1e-2       --mode lora --split devtrain --lr_peft 1e-2
+n1_qat            --mode mod --anchor_vis --split devtrain --qat
+n1_kd1            --mode mod --anchor_vis --split devtrain --distill_pair 1
+n1_kd10           --mode mod --anchor_vis --split devtrain --distill_pair 10
+n1_qat_kd1        --mode mod --anchor_vis --split devtrain --qat --distill_pair 1
+n1_qat_kd10       --mode mod --anchor_vis --split devtrain --qat --distill_pair 10
+full_qat          --mode full --split devtrain --qat
+# modality-specific LayerNorm (anchored: zero visible forgetting), alone and with N1
+msln_lr1e-3       --mode mod --anchor_vis --mod_targets norm --split devtrain --lr_mod_norm 1e-3
+msln_lr1e-2       --mode mod --anchor_vis --mod_targets norm --split devtrain --lr_mod_norm 1e-2
+n1_msln           --mode mod --anchor_vis --mod_targets lowrank,norm --split devtrain
+n1both_msln       --mode mod --anchor_vis --mod_targets lowrank,norm --mod_params both --split devtrain
+msln_qat          --mode mod --anchor_vis --mod_targets norm --split devtrain --qat
+n1_msln_qat       --mode mod --anchor_vis --mod_targets lowrank,norm --split devtrain --qat
