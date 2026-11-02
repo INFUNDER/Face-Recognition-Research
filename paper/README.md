@@ -1,16 +1,11 @@
-# Paper draft: lightweight thermal-to-visible FR on the edge (IEEE Access)
+# Paper: lightweight thermal-to-visible FR on the edge
 
 Build: `latexmk -pdf main.tex` (in this directory).
 
-`main.tex` uses the stock `IEEEtran` journal class so it compiles anywhere. For submission,
-download the IEEE Access LaTeX template from the IEEE Author Center and move the content over:
-replace `\documentclass[journal]{IEEEtran}` by the template's class, and add the template-only
-fields (`\history`, `\doi`, `\tfootnote`, `\corresp`, author biographies and photos).
+`main.tex` uses the IEEEtran journal class (preprint format: Introduction, Related Work,
+Preliminaries, Methodology, Experiments, Discussion, Conclusion).
 
-Before submitting:
-- Confirm the affiliation line and the acknowledgment.
-- Check every entry of `refs.bib` against the publisher's page.
-- Make sure the code URL in "Data and Code Availability" is public.
+References were checked against Crossref, arXiv, PMLR and NeurIPS proceedings (Nov. 2026).
 
 Figures (run from the repository root):
 - `python paper/figures/make_dataset_figures.py` -> `dataset_samples.pdf`, `poses.pdf` (SpeakingFaces images, CC BY 4.0)
@@ -20,9 +15,9 @@ Figures (run from the repository root):
 
 | Paper item | Source |
 |---|---|
-| Tables II, III, Fig. 4, 6 | `results/hfr/cv/*` via `python scripts/hfr/aggregate.py results/hfr/cv --precisions fp32 int8 int8_s3 int8_s012` (saved in `results/hfr/cv_summary.md`) |
+| Tables II, III, Figs. 4, 6 | `results/hfr/cv/*` via `python scripts/hfr/aggregate.py results/hfr/cv --precisions fp32 int8 int8_s3 int8_s012` (saved in `results/hfr/cv_summary.md`) |
 | Paired differences, frontal and VIS→VIS numbers | per-run `eval_*.json` files in `results/hfr/cv/` |
-| Fig. 5, 7, 8 (pose, score distributions, single-stage INT8) | `results/hfr/analysis/*.json` from `scripts/hfr/analysis.py` (seed 0, five folds) |
+| Figs. 5, 7, 8 (pose, score distributions, single-stage INT8) | `results/hfr/analysis/*.json` from `scripts/hfr/analysis.py` (seed 0, five folds) |
 | Table IV (latency, size) | `results/hfr/latency_x86.json` from `scripts/hfr/benchmark_latency.pbs` |
 | Learning-rate selection, negative QAT/distillation results | `results/hfr/dev/` (config `scripts/hfr/configs/dev_sweep.txt`) |
 
