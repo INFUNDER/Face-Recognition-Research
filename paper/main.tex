@@ -1,0 +1,290 @@
+% Draft for IEEE Access. Written with the standard IEEEtran journal class so it compiles with a
+% stock TeX Live; to submit, move the content into the official IEEE Access template
+% (ieeeaccess.cls from the IEEE Author Center) -- see paper/README.md.
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cite}
+
+\newcommand{\pmstd}[2]{#1\,{\scriptsize$\pm$#2}}
+
+\begin{document}
+
+\title{Lightweight Thermal-to-Visible Face Recognition on the Edge: Adaptation, Forgetting and Quantization in a License-Free Benchmark}
+
+\author{Author~One,~\IEEEmembership{Member,~IEEE,}
+        Author~Two%
+\thanks{The authors are with [Affiliation]. Corresponding author: [name] (e-mail: [address]).}}
+
+\maketitle
+
+\begin{abstract}
+Efficient face recognition (FR) models such as EdgeFace reach near state-of-the-art accuracy on visible-light benchmarks with fewer than two million parameters, but edge devices increasingly see faces in the thermal band, where these models are rarely evaluated. We present a systematic study of lightweight thermal-to-visible heterogeneous face recognition (HFR) under the constraints that matter on the edge: few trainable parameters, no loss of visible-light accuracy, and 8-bit quantized deployment. To make the study reproducible without data-access agreements, we build a subject-disjoint, five-fold protocol on the openly licensed SpeakingFaces corpus and release all code. On this protocol a pretrained EdgeFace-XS model drops from 100\% visible-to-visible to 34.0\% thermal-to-visible rank-1 accuracy. We compare full fine-tuning, three shared parameter-efficient methods (BitFit, LayerNorm tuning, LoRA adapted to factorized layers) and four modality-specific methods, including a rank-space modulation of the factorized layers that we introduce, over 15 runs each. Three findings emerge. First, shared adaptation trades \SIrange{0.8}{2.0}{pp} of LFW accuracy for thermal accuracy, whereas modality-specific LayerNorm reaches the same rank-1 accuracy as shared LayerNorm tuning (92.1\% vs.\ 92.3\%) with provably zero visible-light forgetting, at a cost of 6.5\,pp in TAR at FAR\,=\,0.1\%. Second, dynamic INT8 quantization is strongly modality-asymmetric: it costs at most 0.3\,pp of visible-to-visible rank-1 but \SIrange{2.2}{13.7}{pp} of thermal-to-visible rank-1, and the fewer parameters were adapted, the larger the loss. Third, almost all of this loss originates in the first three stages: quantizing only the last stage, which holds 51\% of the linear-layer weights, is within 1.2\,pp of FP32 for every method. On a server-class x86 CPU, dynamic INT8 is slower than FP32 for these low-rank models, so the last-stage-only configuration is also the fastest quantized variant. We discuss what these results imply for deploying cross-spectral FR on edge hardware.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Heterogeneous face recognition, thermal face recognition, efficient neural networks, parameter-efficient fine-tuning, catastrophic forgetting, post-training quantization, mixed precision, edge computing.
+\end{IEEEkeywords}
+
+%=====================================================================
+\section{Introduction}
+%=====================================================================
+\IEEEPARstart{F}{ace} recognition on edge devices has progressed rapidly. Compact architectures such as MobileFaceNet~\cite{chen2018mobilefacenets} and, more recently, EdgeFace~\cite{george2024edgeface}, which combines the hybrid CNN-Transformer EdgeNeXt~\cite{maaz2022edgenext} with low-rank factorized linear layers, achieve high verification accuracy on visible-light benchmarks with a few million parameters and a few hundred MFLOPs. Many of the settings in which such models are deployed, however, are not well lit: access control at night, driver monitoring, and surveillance increasingly rely on thermal cameras, which are insensitive to illumination and harder to spoof with printed photographs. In these settings the enrolment gallery is still visible-light, so the task becomes heterogeneous face recognition (HFR): matching a thermal probe against visible templates.
+
+HFR has been studied extensively for large models~\cite{wu2018lightcnn,fu2019dvg,george2023pdt}, but three questions that decide whether it is practical on an edge device remain largely open for lightweight models. (i) \emph{How should a compact model be adapted to the thermal band?} Full fine-tuning is expensive to store per modality, and parameter-efficient fine-tuning (PEFT) methods~\cite{benzaken2022bitfit,hu2022lora} were developed for very different models. (ii) \emph{What happens to the visible-light task?} A single deployed model must keep serving visible-light probes, and adapting it to thermal data can cause catastrophic forgetting~\cite{kirkpatrick2017ewc,li2018lwf}. (iii) \emph{What does quantization do to cross-modal matching?} Edge deployment almost always involves 8-bit quantization~\cite{jacob2018quantization,krishnamoorthi2018whitepaper}, which is routinely validated on visible-light benchmarks only.
+
+A practical obstacle to answering these questions is data access. The standard cross-spectral face benchmarks, such as CASIA NIR-VIS~2.0~\cite{li2013casia}, are distributed under individual license agreements, which makes it difficult for many groups to reproduce or extend published results. We therefore build our study entirely on SpeakingFaces~\cite{abdrakhmanova2021speakingfaces}, a corpus of synchronized, spatially registered thermal and visible video of 142 subjects released under the Creative Commons Attribution 4.0 license, which anyone can download without a request.
+
+\noindent Our contributions are:
+\begin{itemize}
+\item A reproducible, license-free thermal-to-visible HFR protocol for lightweight models: subject-disjoint five-fold cross-validation with fixed gallery/probe definitions, together with a pipeline that downloads only the required frames (about 3\,GB instead of the full 1.2\,TB release). All code is released.
+\item A controlled comparison of eight adaptation strategies for EdgeFace (full fine-tuning, BitFit, LayerNorm tuning, LoRA for factorized layers, and four modality-specific variants, including a rank-space modulation that we introduce), over five folds and three seeds, that measures thermal accuracy and visible-light forgetting jointly.
+\item Evidence that INT8 quantization is modality-asymmetric for HFR: it leaves visible matching essentially untouched but costs up to 13.7\,pp of thermal rank-1 accuracy, more so for methods that adapt fewer parameters.
+\item A stage-wise sensitivity analysis showing that this loss originates almost entirely in the early stages, which leads to a simple mixed-precision configuration that is within 1.2\,pp of FP32 for every method, together with CPU latency measurements showing that dynamic INT8 does not speed up these low-rank models on x86 CPUs.
+\end{itemize}
+
+%=====================================================================
+\section{Related Work}
+%=====================================================================
+\subsection{Efficient Face Recognition}
+MobileFaceNets~\cite{chen2018mobilefacenets} adapted mobile CNN design to face embeddings, and a series of efficient FR competitions has since pushed the accuracy of sub-million to few-million parameter models. EdgeFace~\cite{george2024edgeface} builds on EdgeNeXt~\cite{maaz2022edgenext}, a hybrid of convolutional encoders and split depth-wise transposed attention, and replaces its linear layers by low-rank factorized layers (LoRaLin) $W\!=\!UV$, which reduces parameters and FLOPs with a small loss in accuracy. These models are trained with margin-based softmax losses such as ArcFace~\cite{deng2019arcface} on large visible-light datasets and are evaluated on visible-light verification benchmarks such as LFW~\cite{huang2007lfw}.
+
+\subsection{Heterogeneous Face Recognition}
+HFR matches faces across imaging modalities, most commonly near-infrared (NIR) to visible and thermal to visible. Approaches include learning modality-invariant features with lightweight backbones~\cite{wu2018lightcnn}, synthesizing paired data with generative models~\cite{fu2019dvg}, and adding a small modality-specific front-end to a frozen visible-light FR network, as in the Prepended Domain Transformer~\cite{george2023pdt}. The last approach is closest in spirit to the modality-specific methods we study, since it keeps the visible path unchanged; our study examines this design space for a compact backbone and under quantization. Thermal-to-visible matching is generally harder than NIR-to-visible because thermal images record emitted rather than reflected radiation.
+
+\subsection{Parameter-Efficient Fine-Tuning and Forgetting}
+BitFit~\cite{benzaken2022bitfit} tunes only bias terms, and LoRA~\cite{hu2022lora} adds trainable low-rank updates to frozen weights. Tuning normalization parameters is another lightweight option, and domain-specific normalization~\cite{chang2019dsbn} keeps separate normalization parameters per domain. Fine-tuning on a new domain can degrade performance on the original one (catastrophic forgetting~\cite{kirkpatrick2017ewc}); methods such as Learning without Forgetting~\cite{li2018lwf} mitigate it with regularization, whereas modality-specific parameters avoid it by construction.
+
+\subsection{Quantization}
+Integer quantization~\cite{jacob2018quantization} is the default way to shrink and accelerate models on edge hardware. Post-training dynamic quantization stores weights in INT8 and quantizes activations on the fly~\cite{krishnamoorthi2018whitepaper,nagel2021whitepaper}. Mixed-precision methods assign different bit widths to layers according to their sensitivity~\cite{dong2019hawq}. To our knowledge, the interaction between quantization and cross-modal matching in lightweight HFR has not been characterized.
+
+%=====================================================================
+\section{A License-Free Thermal-to-Visible Protocol}
+%=====================================================================
+\subsection{Data}
+SpeakingFaces~\cite{abdrakhmanova2021speakingfaces} contains thermal and visible video of 142 subjects, recorded in two trials per subject at nine head positions, with the visible stream registered to the thermal stream pixel by pixel. One subject (ID~2) has no image data in the public release, leaving 141 subjects. For each subject, trial and position we take frames 100, 300, 500 and 700 of the 900-frame clip, which yields 72 thermal--visible pairs per subject and 10{,}152 pairs in total. Because the archives are large, our pipeline reads only the required files from the remote archives with HTTP range requests.
+
+\subsection{Alignment}
+We detect five facial landmarks with MTCNN~\cite{zhang2016mtcnn} on the visible frame, estimate a similarity transform to the standard $112\!\times\!112$ ArcFace template, and apply the \emph{same} transform to the registered thermal frame. Detection failed for 51 pairs (0.5\%), which are discarded. Thermal frames are converted from their false-colour rendering to grey scale and replicated over three channels.
+
+\subsection{Protocol}
+Subjects are split into five folds by subject ID ($\text{ID} \bmod 5$), giving 28--29 test subjects and 112--113 training subjects per fold. For each test fold:
+\begin{itemize}
+\item \textbf{Gallery}: visible images of trial~1, frontal position, averaged into one L2-normalized template per subject.
+\item \textbf{Probes}: thermal images of trial~2 at all nine positions (about 1{,}000 probes per fold). Trial~2 is a separate recording, so probes never share frames with the gallery.
+\item \textbf{Metrics}: closed-set rank-1 identification accuracy, and verification over all probe--template pairs (about 28{,}000 pairs per fold), reported as true accept rate (TAR) at false accept rate (FAR) $10^{-3}$ and equal error rate (EER).
+\item \textbf{Sanity check}: the same protocol with visible probes (VIS$\to$VIS).
+\item \textbf{Forgetting}: LFW~\cite{huang2007lfw} verification accuracy of the adapted model's visible path, using the standard 10-fold protocol.
+\end{itemize}
+Every method is trained on each of the five training folds with three seeds, and we report mean $\pm$ standard deviation over the 15 runs. Because the folds differ in difficulty, the standard deviations mostly reflect fold variation; where we compare two methods we also report paired differences over the same fold and seed.
+
+%=====================================================================
+\section{Adaptation Strategies}
+%=====================================================================
+All methods start from the public EdgeFace-XS ($\gamma\!=\!0.6$) checkpoint, which has 1.77\,M parameters and 43 factorized layers $W\!=\!UV$, $U\!\in\!\mathbb{R}^{d_o\times r}$, $V\!\in\!\mathbb{R}^{r\times d_i}$. Training mixes thermal and visible images of the training subjects with an ArcFace head that is discarded afterwards.
+
+\paragraph{Shared methods} These update parameters used by both modalities. \emph{Full fine-tuning} trains all weights. \emph{BitFit}~\cite{benzaken2022bitfit} trains the 15{,}400 bias parameters. \emph{LN tuning} trains the affine parameters of all LayerNorm layers (5{,}080 parameters). \emph{LoRA}~\cite{hu2022lora} cannot be applied as usual without increasing the rank of each layer, so we implement it as a rank expansion: each factorized layer becomes $W\!=\![U\;B][V;A]$ with $B$ initialized to zero and only $A,B$ trained. With one extra component per layer this adds 20{,}480 parameters, and the result is still a factorized layer, so quantized export is unchanged.
+
+\paragraph{Modality-specific methods} These keep separate parameters for each modality $m\in\{\text{vis},\text{thr}\}$ and freeze the visible copy at its pretrained value, so that the visible path is \emph{exactly} the pretrained network and visible accuracy cannot change. The backbone is frozen.
+\begin{itemize}
+\item \emph{Modality-specific LayerNorm} (msLN), following domain-specific normalization~\cite{chang2019dsbn}: each LayerNorm has per-modality affine parameters, $y=\gamma_m\odot\hat{x}+\beta_m$ (5{,}080 thermal parameters).
+\item \emph{Rank-space modulation} (RSM, ours): the factorized structure of EdgeFace offers a natural place to inject modality information, namely the $r$-dimensional bottleneck of each layer. We modulate it as
+\begin{equation}
+y = U\big(s_m \odot (Vx) + t_m\big) + b,
+\end{equation}
+with per-modality scale $s_m$ (initialized to ones) and shift $t_m$ (initialized to zeros). For a fixed modality, $s_m$ folds into $U$ and $Ut_m$ into $b$, so deployment has no overhead. We evaluate the scale only (\emph{RSM-s}, 2{,}653 parameters), scale and shift (\emph{RSM}, 5{,}306 parameters), and RSM combined with msLN (\emph{RSM+msLN}, 10{,}386 parameters).
+\end{itemize}
+
+%=====================================================================
+\section{Experimental Setup}
+%=====================================================================
+All models are trained for 20 epochs with batch size 128, AdamW, a one-cycle learning-rate schedule with 10\% warm-up, and ArcFace (scale 64, margin 0.5). The ArcFace head uses learning rate $10^{-2}$; the backbone in full fine-tuning uses $10^{-4}$ with weight decay 0.05; PEFT parameters use $10^{-3}$, RSM vectors $10^{-2}$ and msLN parameters $10^{-3}$, all without weight decay. The only augmentation is horizontal flipping. Learning rates were chosen from two candidates per method on a development split (training subjects 1--80, validation subjects 81--100), and the same budget was used for every method.
+
+Quantized models use PyTorch dynamic INT8 quantization of all linear layers (per-tensor symmetric INT8 weights, per-tensor asymmetric activations quantized on the fly with the fbgemm backend); convolutions remain in FP32. Mixed-precision variants quantize the linear layers of a subset of the four EdgeNeXt stages only. Latency is measured with PyTorch~2.4 on an Intel Xeon Platinum 8470 CPU, for single $112\!\times\!112$ images, as the median of 200 runs after 20 warm-up runs, with one and four threads.
+
+%=====================================================================
+\section{Results}
+%=====================================================================
+\subsection{The Thermal-to-Visible Gap}
+Without adaptation, EdgeFace-XS reaches 100\% VIS$\to$VIS rank-1 on our protocol but only \pmstd{34.0}{6.7}\% thermal-to-visible rank-1 accuracy, with TAR@FAR\,=\,0.1\% of 6.3\% and an EER of 24.7\% (Table~\ref{tab:main}). The model thus has excellent visible features but almost no transfer to the thermal band, which motivates adaptation.
+
+\begin{table*}[t]
+\centering
+\caption{Thermal-to-visible HFR on SpeakingFaces (5 folds $\times$ 3 seeds, mean $\pm$ std). Params: trainable parameters. LFW: verification accuracy of the visible path (pretrained: 99.73\%). Modality-specific methods keep the visible path identical to the pretrained network.}
+\label{tab:main}
+\begin{tabular}{llrcccccc}
+\toprule
+& & & \multicolumn{3}{c}{FP32} & \multicolumn{2}{c}{INT8 (all linear layers)} & \\
+\cmidrule(lr){4-6}\cmidrule(lr){7-8}
+Type & Method & Params & Rank-1 (\%) & TAR@0.1\% & EER (\%) & Rank-1 (\%) & TAR@0.1\% & LFW (\%) \\
+\midrule
+-- & Zero-shot & 0 & \pmstd{33.96}{6.73} & \pmstd{6.32}{4.56} & 24.72 & \pmstd{28.83}{6.19} & \pmstd{5.19}{4.01} & 99.73 \\
+\midrule
+\multirow{4}{*}{Shared}
+& Full fine-tuning & 1.77\,M & \pmstd{\textbf{95.58}}{4.29} & \pmstd{\textbf{83.83}}{5.68} & \textbf{2.70} & \pmstd{\textbf{93.38}}{4.76} & \pmstd{\textbf{76.70}}{8.04} & \pmstd{98.52}{0.18} \\
+& LoRA ($r{+}1$) & 20.5\,k & \pmstd{93.58}{3.87} & \pmstd{77.84}{7.38} & 3.64 & \pmstd{89.10}{5.22} & \pmstd{64.20}{7.17} & \pmstd{98.96}{0.11} \\
+& BitFit & 15.4\,k & \pmstd{92.85}{4.86} & \pmstd{71.57}{9.80} & 3.79 & \pmstd{89.90}{5.24} & \pmstd{64.35}{9.36} & \pmstd{97.78}{0.16} \\
+& LN tuning & 5.1\,k & \pmstd{92.31}{4.78} & \pmstd{72.56}{7.35} & 4.28 & \pmstd{86.96}{5.34} & \pmstd{58.54}{7.06} & \pmstd{98.36}{0.18} \\
+\midrule
+\multirow{4}{*}{\shortstack[l]{Modality-\\specific}}
+& msLN & 5.1\,k & \pmstd{92.05}{2.90} & \pmstd{66.06}{4.30} & 5.15 & \pmstd{84.66}{4.15} & \pmstd{50.81}{7.83} & \textbf{99.73} \\
+& RSM+msLN (ours) & 10.4\,k & \pmstd{91.25}{3.50} & \pmstd{65.36}{6.76} & 5.77 & \pmstd{86.22}{3.89} & \pmstd{54.43}{6.57} & \textbf{99.73} \\
+& RSM (ours) & 5.3\,k & \pmstd{88.37}{3.84} & \pmstd{58.64}{9.37} & 6.17 & \pmstd{82.45}{4.94} & \pmstd{44.51}{9.38} & \textbf{99.73} \\
+& RSM-s (ours) & 2.7\,k & \pmstd{84.10}{4.52} & \pmstd{46.22}{10.79} & 6.95 & \pmstd{70.43}{5.96} & \pmstd{28.66}{5.65} & \textbf{99.73} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Adaptation and Forgetting}
+All methods close most of the gap (Table~\ref{tab:main}). Full fine-tuning is the most accurate (95.6\% rank-1, 83.8\% TAR@0.1\%) and outperforms LoRA in all 15 paired runs (+2.0\,pp rank-1, +6.0\,pp TAR). It also forgets the most among the high-accuracy methods: LFW accuracy falls from 99.73\% to 98.52\%. Every shared method forgets, between 0.77\,pp (LoRA) and 1.95\,pp (BitFit); because LFW is close to saturation, these differences correspond to a 3--8$\times$ increase in verification errors.
+
+The modality-specific methods leave LFW at exactly 99.73\% by construction. Among them, msLN is the strongest: it matches shared LN tuning, which trains the same number of parameters, in rank-1 accuracy (paired difference $-0.26\pm2.58$\,pp), but is 6.5\,pp lower in TAR@0.1\% (lower in 14 of 15 runs). Being able to adapt the visible statistics as well therefore helps verification at strict operating points, at the price of forgetting. Our rank-space modulation is less effective than msLN on its own: the scale-only variant reaches 84.1\% rank-1, adding a shift improves every run (+4.3\,pp rank-1, +12.4\,pp TAR, 15/15), but RSM still trails msLN by 3.7\,pp rank-1 in all 15 runs. Combining RSM with msLN does not improve FP32 accuracy over msLN alone ($-0.8$\,pp rank-1, $-0.7$\,pp TAR), although, as shown next, it is more robust to quantization. We conclude that, for a compact backbone, normalization statistics rather than the subspace spanned by the factorized layers carry most of the modality-specific information.
+
+Fig.~\ref{fig:tradeoff} summarizes the trade-off: shared methods form an accuracy frontier that is reachable only by giving up visible accuracy, and the best zero-forgetting method sits about 6\,pp below the closest shared method in TAR@0.1\%.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\columnwidth, height=0.72\columnwidth,
+  xlabel={LFW accuracy drop (pp)}, ylabel={TAR@FAR=0.1\% (\%)},
+  xmin=-0.2, xmax=2.2, ymin=40, ymax=90,
+  grid=major, grid style={gray!20},
+  legend style={at={(0.98,0.03)}, anchor=south east, font=\footnotesize},
+  every node near coord/.append style={font=\scriptsize},
+  nodes near coords, point meta=explicit symbolic,
+]
+\addplot[only marks, mark=*, color=blue!70!black, mark size=2.2pt] coordinates {
+  (1.21,83.83) [Full FT]
+  (0.77,77.84) [LoRA]
+  (1.95,71.57) [BitFit]
+  (1.37,72.56) [LN]
+};
+\addlegendentry{Shared}
+\addplot[only marks, mark=square*, color=orange!85!black, mark size=2.2pt,
+  nodes near coords align={anchor=west}] coordinates {
+  (0,66.06) [msLN]
+  (0,58.64) [RSM]
+  (0,46.22) [RSM-s]
+};
+\addlegendentry{Modality-specific}
+\addplot[only marks, mark=square*, color=orange!85!black, mark size=2.2pt, forget plot,
+  nodes near coords align={anchor=north west}] coordinates {
+  (0,65.36) [RSM+msLN]
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Thermal-to-visible verification accuracy versus visible-light forgetting (FP32, mean of 15 runs). Modality-specific methods have zero forgetting by construction.}
+\label{fig:tradeoff}
+\end{figure}
+
+\subsection{Quantization Is Modality-Asymmetric}
+Table~\ref{tab:asym} compares the rank-1 accuracy lost to INT8 quantization for visible and thermal probes, measured on the same models. For visible probes the loss is negligible (at most 0.3\,pp). For thermal probes it ranges from 2.2\,pp (full fine-tuning) to 13.7\,pp (RSM-s), and even the unadapted model loses 5.1\,pp. Quantization noise that is harmless for well-separated visible embeddings thus becomes significant for thermal embeddings, which lie closer to the decision boundary.
+
+The loss also grows as fewer parameters are adapted: full fine-tuning loses 2.2\,pp, the 5--20\,k-parameter methods 3.0--7.4\,pp, and the 2.7\,k-parameter RSM-s 13.7\,pp. A plausible explanation is that full fine-tuning can reshape the whole network so that thermal embeddings are well separated, whereas methods that only modulate a frozen network rely on small, precise feature shifts that quantization noise can overwhelm. Among modality-specific methods, combining RSM with msLN reduces the INT8 loss from 7.4\,pp (msLN) to 5.0\,pp and gives the best quantized accuracy (86.2\% rank-1, 54.4\% TAR).
+
+\begin{table}[t]
+\centering
+\caption{Rank-1 accuracy lost to INT8 (FP32 minus INT8, pp; paired over 15 runs) for visible and thermal probes of the same models.}
+\label{tab:asym}
+\begin{tabular}{lcc}
+\toprule
+Method & VIS$\to$VIS & THR$\to$VIS \\
+\midrule
+Zero-shot & 0.02 & \pmstd{5.14}{2.31} \\
+Full fine-tuning & 0.06 & \pmstd{2.20}{1.00} \\
+BitFit & 0.26 & \pmstd{2.96}{1.15} \\
+LoRA & 0.09 & \pmstd{4.48}{1.98} \\
+LN tuning & 0.30 & \pmstd{5.35}{1.63} \\
+RSM+msLN & 0.02 & \pmstd{5.03}{1.74} \\
+RSM & 0.02 & \pmstd{5.92}{2.09} \\
+msLN & 0.02 & \pmstd{7.39}{2.52} \\
+RSM-s & 0.02 & \pmstd{13.67}{2.41} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Where the Quantization Loss Comes From}
+To locate the loss, we quantize the linear layers of only some stages (Table~\ref{tab:mixed}). The two configurations are complementary: stage~4 (the last stage) holds 51\% of the 1.57\,M linear-layer weights, and stages 1--3 hold 44\% (the head holds the rest). Quantizing only stages 1--3 reproduces almost the whole INT8 loss, whereas quantizing only stage~4 costs between $-0.01$ and 1.2\,pp of rank-1 relative to FP32 for every method. Sensitivity is therefore not proportional to parameter count: the stage with the most weights is the least sensitive. A likely reason is that errors introduced early are propagated and amplified by all later layers, and that early-stage activations, computed at high spatial resolution, have wide dynamic ranges that per-tensor activation quantization represents coarsely.
+
+\begin{table*}[t]
+\centering
+\caption{Mixed-precision INT8: thermal-to-visible rank-1 / TAR@0.1\% (\%) when only some stages' linear layers are quantized (5 folds $\times$ 3 seeds). Size: serialized EdgeFace-XS model.}
+\label{tab:mixed}
+\begin{tabular}{lcccc}
+\toprule
+ & FP32 & INT8 stage 4 only & INT8 stages 1--3 only & INT8 all \\
+ & (6.85\,MB) & (4.59\,MB) & (4.95\,MB) & (2.45\,MB) \\
+\midrule
+Zero-shot & 33.96 / 6.32 & 33.08 / 6.06 & 30.15 / 5.61 & 28.83 / 5.19 \\
+Full fine-tuning & 95.58 / 83.83 & \textbf{95.58} / \textbf{82.82} & 93.53 / 77.10 & 93.38 / 76.70 \\
+LoRA & 93.58 / 77.84 & 93.07 / 76.28 & 89.86 / 66.78 & 89.10 / 64.20 \\
+BitFit & 92.85 / 71.57 & 92.55 / 70.83 & 90.39 / 66.22 & 89.90 / 64.35 \\
+LN tuning & 92.31 / 72.56 & 91.48 / 71.02 & 87.74 / 60.50 & 86.96 / 58.54 \\
+msLN & 92.05 / 66.06 & 90.88 / 63.98 & 85.85 / 52.87 & 84.66 / 50.81 \\
+RSM+msLN & 91.25 / 65.36 & 90.27 / 63.23 & 86.89 / 57.25 & 86.22 / 54.43 \\
+RSM & 88.37 / 58.64 & 87.35 / 56.21 & 83.37 / 47.94 & 82.45 / 44.51 \\
+RSM-s & 84.10 / 46.22 & 83.05 / 44.06 & 71.81 / 31.27 & 70.43 / 28.66 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Size and Latency}
+Table~\ref{tab:latency} reports CPU latency and model size. On this x86 CPU, dynamic INT8 is \emph{slower} than FP32 for both EdgeFace-XS (7.96 vs.\ 6.14\,ms with one thread) and EdgeFace-S (9.29 vs.\ 7.96\,ms). The factorized layers have small inner dimensions, so the cost of quantizing activations on the fly and of the extra kernel calls exceeds the savings in arithmetic. Quantizing only stage~4 is the fastest quantized configuration (6.53\,ms, 6\% slower than FP32) and reduces the model size by 33\%, while keeping accuracy within 1.2\,pp of FP32 (Table~\ref{tab:mixed}). Full INT8 gives the largest size reduction ($2.8\times$), which matters when storage or memory bandwidth, rather than compute, is the bottleneck.
+
+\begin{table}[t]
+\centering
+\caption{Serialized size and median CPU latency per $112\!\times\!112$ face (Intel Xeon Platinum 8470, PyTorch 2.4, dynamic INT8 with fbgemm).}
+\label{tab:latency}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccc}
+\toprule
+ & & Size & \multicolumn{2}{c}{Latency (ms)} \\
+\cmidrule(lr){4-5}
+Model & Precision & (MB) & 1 thread & 4 threads \\
+\midrule
+\multirow{4}{*}{XS} & FP32 & 6.85 & \textbf{6.14} & \textbf{5.23} \\
+ & INT8 stage 4 & 4.59 & 6.53 & 5.70 \\
+ & INT8 stages 1--3 & 4.95 & 7.92 & 7.04 \\
+ & INT8 all & \textbf{2.45} & 7.96 & 7.24 \\
+\midrule
+\multirow{4}{*}{S} & FP32 & 14.03 & \textbf{7.96} & \textbf{6.24} \\
+ & INT8 stage 4 & 9.28 & 8.10 & 6.59 \\
+ & INT8 stages 1--3 & 9.99 & 9.66 & 7.90 \\
+ & INT8 all & \textbf{4.89} & 9.29 & 8.11 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=====================================================================
+\section{Discussion}
+%=====================================================================
+\subsection{Recommendations}
+Our results suggest the following for deploying a lightweight model that must recognize both visible and thermal probes. If a separate thermal model can be stored and a small loss of visible accuracy is acceptable, full fine-tuning is the most accurate choice and the most robust to quantization. If a single model must serve both modalities with no visible-light regression, modality-specific LayerNorm is a strong, simple default, and combining it with rank-space modulation improves its quantized accuracy. In all cases, quantizing the early stages is where accuracy is lost: keeping stages 1--3 in higher precision recovers almost all of the INT8 loss at a modest cost in size.
+
+\subsection{Negative Results}
+In preliminary experiments on the development split (single seed), we also trained the modality-specific methods with quantization-aware training, using a fake-quantization module that reproduces PyTorch's dynamic INT8 to within $10^{-4}$ mean relative error per layer, and with a distillation loss that pulls each thermal embedding towards the pretrained embedding of its registered visible frame. Neither gave consistent gains beyond seed-to-seed variation, so we did not pursue them in the full protocol. We report them so that others need not repeat them, while noting that a single development run cannot rule out benefits.
+
+\subsection{Limitations}
+Our study uses a single dataset with 141 subjects, recorded in one laboratory with one thermal camera; the absolute numbers will not transfer directly to other sensors or to uncontrolled conditions, and larger gallery sizes will make identification harder. The test folds contain 28--29 identities, so rank-1 accuracy is optimistic compared with large-gallery settings, which is why we also report TAR at a strict FAR. Learning rates were selected on subjects 81--100, which also appear in test folds of the cross-validation; the selection grid was very small (two values per method) and identical across methods, but this is a mild form of leakage. Finally, latency was measured on a server-class x86 CPU; ARM processors and dedicated accelerators, which use different INT8 kernels, may show different speed-ups, and we did not have such hardware available.
+
+%=====================================================================
+\section{Conclusion}
+%=====================================================================
+We studied how a sub-two-million-parameter face recognition model can be adapted to thermal-to-visible matching under edge constraints, using a reproducible protocol built only on openly licensed data. Adaptation closes most of the 66\,pp rank-1 gap, but every method that shares parameters with the visible path forgets visible-light accuracy, while modality-specific methods that keep it intact trail by about 6\,pp in TAR at FAR\,=\,0.1\%. INT8 quantization hurts thermal matching much more than visible matching, increasingly so for methods that adapt fewer parameters, and this loss comes almost entirely from the early network stages, so a simple mixed-precision configuration recovers it. We hope that the protocol and findings make cross-spectral evaluation a routine part of developing efficient face recognition models.
+
+\section*{Acknowledgment}
+The authors thank the creators of SpeakingFaces for releasing the dataset under an open license.
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
