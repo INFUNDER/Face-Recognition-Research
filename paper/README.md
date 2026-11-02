@@ -8,15 +8,21 @@ replace `\documentclass[journal]{IEEEtran}` by the template's class, and add the
 fields (`\history`, `\doi`, `\tfootnote`, `\corresp`, author biographies and photos).
 
 Before submitting:
-- Replace the placeholder authors, affiliation and acknowledgment.
+- Confirm the affiliation line and the acknowledgment.
 - Check every entry of `refs.bib` against the publisher's page.
+- Make sure the code URL in "Data and Code Availability" is public.
+
+Figures (run from the repository root):
+- `python paper/figures/make_dataset_figures.py` -> `dataset_samples.pdf`, `poses.pdf` (SpeakingFaces images, CC BY 4.0)
+- `python paper/figures/make_result_figures.py` -> `tradeoff.pdf`, `int8_drop.pdf`, `pose.pdf`, `scores.pdf`, `stage_int8.pdf`
 
 ## Where every number comes from
 
 | Paper item | Source |
 |---|---|
-| Table I, II, III, Fig. 1 | `results/hfr/cv/*` via `python scripts/hfr/aggregate.py results/hfr/cv --precisions fp32 int8 int8_s3 int8_s012` (saved in `results/hfr/cv_summary.md`) |
+| Tables II, III, Fig. 4, 6 | `results/hfr/cv/*` via `python scripts/hfr/aggregate.py results/hfr/cv --precisions fp32 int8 int8_s3 int8_s012` (saved in `results/hfr/cv_summary.md`) |
 | Paired differences, frontal and VIS→VIS numbers | per-run `eval_*.json` files in `results/hfr/cv/` |
+| Fig. 5, 7, 8 (pose, score distributions, single-stage INT8) | `results/hfr/analysis/*.json` from `scripts/hfr/analysis.py` (seed 0, five folds) |
 | Table IV (latency, size) | `results/hfr/latency_x86.json` from `scripts/hfr/benchmark_latency.pbs` |
 | Learning-rate selection, negative QAT/distillation results | `results/hfr/dev/` (config `scripts/hfr/configs/dev_sweep.txt`) |
 

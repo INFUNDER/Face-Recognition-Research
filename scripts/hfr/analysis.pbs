@@ -1,0 +1,17 @@
+#!/bin/bash
+#PBS -N hfr_analysis
+#PBS -q workq
+#PBS -l select=1:ncpus=32:mem=64g
+#PBS -l walltime=04:00:00
+#PBS -j oe
+# Pose, score-distribution and single-stage INT8 analyses for the paper (scripts/hfr/analysis.py);
+# CPU only (the gpu queue allows 2 running jobs per user)
+cd $PBS_O_WORKDIR
+source /home/soft/anaconda3/etc/profile.d/conda.sh
+conda activate GPU-env
+mkdir -p logs/hfr
+export OMP_NUM_THREADS=5
+for M in zeroshot full lora ln msln n1both_msln; do
+    python scripts/hfr/analysis.py --methods $M > logs/hfr/analysis_$M.log 2>&1 &
+done
+wait
